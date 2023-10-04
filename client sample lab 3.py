@@ -16,7 +16,7 @@ import copy
 socketLock = threading.Lock()
 imageLock = threading.Lock()
 
-IP_ADDRESS = "raspberrypi-7.local" 	# SET THIS TO THE RASPBERRY PI's IP ADDRESS
+IP_ADDRESS = "192.168.1.106" 	# SET THIS TO THE RASPBERRY PI's IP ADDRESS
 RESIZE_SCALE = 2 # try a larger value if your computer is running slow.
 ENABLE_ROBOT_CONNECTION = False
 
@@ -155,7 +155,8 @@ class ImageProc(threading.Thread):
         self.RUNNING = True
         self.latestImg = []
         self.feedback = []
-        self.thresholds = {'low_red':0,'high_red':0,'low_green':0,'high_green':0,'low_blue':0,'high_blue':0}
+        self.thresholds = {'low_hue':0,'high_hue':0,'low_sat':0,'high_sat':0,'low_val':0,'high_val':0}
+        self.dict = {"oCone": [93,192,144,255,0,22], "gCone": [0,289,31,241,45,66], "yCone": [139,360,110,227,13,42]}
 
     def run(self):
         url = "http://"+self.IP_ADDRESS+":"+str(self.PORT)
@@ -192,14 +193,18 @@ class ImageProc(threading.Thread):
         self.thresholds[name] = value
     
     def doImgProc(self):
-        low = (self.thresholds['low_blue'], self.thresholds['low_green'], self.thresholds['low_red'])
-        high = (self.thresholds['high_blue'], self.thresholds['high_green'], self.thresholds['high_red'])
-        theMask = cv2.inRange(self.latestImg, low, high)
+        low = (self.thresholds['low_val'], self.thresholds['low_sat'], self.thresholds['low_hue'])
+        high = (self.thresholds['high_val'], self.thresholds['high_sat'], self.thresholds['high_hue'])
+        # theMask = cv2.inRange(self.latestImg, low, high)
         
         # TODO: Work here
-    
+        hsvImage = cv2.cvtColor(self.latestImg, cv2.COLOR_BGR2HSV)   
+        hsvMask = cv2.inRange(hsvImage, low, high)
+        updatedImage = cv2.bitwise_and(hsvImage, hsvImage, mask=hsvMask)
+        bwImage = cv2.cvtColor(updatedImage, cv2.COLOR_HSV2GRAY)   
         # END TODO
-        return cv2.bitwise_and(self.latestImg, self.latestImg, mask=theMask)
+        # return cv2.bitwise_and(self.latestImg, self.latestImg, mask=theMask)
+        return cv2.bitwise_and(hsvImage, hsvImage, mask=hsvMask)
 
 # END OF IMAGEPROC
 
@@ -216,20 +221,20 @@ if __name__ == "__main__":
     sm.start()
     
     # Probably safer to do this on the main thread rather than in ImgProc init
-    cv2.createTrackbar('low_red', 'sliders', sm.video.thresholds['low_red'], 255,
-                      lambda x: sm.video.setThresh('low_red', x) )
-    cv2.createTrackbar('high_red', 'sliders', sm.video.thresholds['high_red'], 255,
-                     lambda x: sm.video.setThresh('high_red', x) )
+    cv2.createTrackbar('low_hue', 'sliders', sm.video.thresholds['low_hue'], 360,
+                      lambda x: sm.video.setThresh('low_hue', x) )
+    cv2.createTrackbar('high_hue', 'sliders', sm.video.thresholds['high_hue'], 360,
+                     lambda x: sm.video.setThresh('high_hue', x) )
     
-    cv2.createTrackbar('low_green', 'sliders', sm.video.thresholds['low_green'], 255,
-                      lambda x: sm.video.setThresh('low_green', x) )
-    cv2.createTrackbar('high_green', 'sliders', sm.video.thresholds['high_green'], 255,
-                     lambda x: sm.video.setThresh('high_green', x) )
+    cv2.createTrackbar('low_sat', 'sliders', sm.video.thresholds['low_sat'], 255,
+                      lambda x: sm.video.setThresh('low_sat', x) )
+    cv2.createTrackbar('high_sat', 'sliders', sm.video.thresholds['high_sat'], 255,
+                     lambda x: sm.video.setThresh('high_sat', x) )
     
-    cv2.createTrackbar('low_blue', 'sliders', sm.video.thresholds['low_blue'], 255,
-                      lambda x: sm.video.setThresh('low_blue', x) )
-    cv2.createTrackbar('high_blue', 'sliders', sm.video.thresholds['high_blue'], 255,
-                     lambda x: sm.video.setThresh('high_blue', x) )
+    cv2.createTrackbar('low_val', 'sliders', sm.video.thresholds['low_val'], 255,
+                      lambda x: sm.video.setThresh('low_val', x) )
+    cv2.createTrackbar('high_val', 'sliders', sm.video.thresholds['high_val'], 255,
+                     lambda x: sm.video.setThresh('high_val', x) )
 
     while len(sm.video.latestImg) == 0 or len(sm.video.feedback) == 0:
         sleep(1)
