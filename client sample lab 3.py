@@ -18,11 +18,17 @@ imageLock = threading.Lock()
 
 IP_ADDRESS = "192.168.1.106" 	# SET THIS TO THE RASPBERRY PI's IP ADDRESS
 RESIZE_SCALE = 2 # try a larger value if your computer is running slow.
-ENABLE_ROBOT_CONNECTION = False
+ENABLE_ROBOT_CONNECTION = True
 
 # You should fill this in with your states
 class States(enum.Enum):
     LISTEN = enum.auto()
+    CENTER = enum.auto()
+    ABOVE = enum.auto()
+    BELOW = enum.auto()
+    LEFT = enum.auto()
+    RIGHT = enum.auto()
+    NO = enum.auto()
 
 class StateMachine(threading.Thread):
 
@@ -39,6 +45,7 @@ class StateMachine(threading.Thread):
         self.video = ImageProc()
         # Start video
         self.video.start()
+        self.thresh = 50
         
         # connect to the motorcontroller
         try:
@@ -76,10 +83,14 @@ class StateMachine(threading.Thread):
         # BEGINNING OF THE CONTROL LOOP
         while(self.RUNNING):
             sleep(0.1)
+            video = self.video
             if self.STATE == States.LISTEN:
+                if (video.backY - self.thresh) <= video.centerY and (video.backY + self.thresh) >= video.centerY:
+                    if(video.backX - self.thresh) >= video.centerX
                 pass
             # TODO: Work here
-        
+            if self.STATE == States.LISTEN:
+                pass
 
         # END OF CONTROL LOOP
         
@@ -155,9 +166,12 @@ class ImageProc(threading.Thread):
         self.RUNNING = True
         self.latestImg = []
         self.feedback = []
-        self.thresholds = {'low_hue':0,'high_hue':0,'low_sat':0,'high_sat':0,'low_val':0,'high_val':0}
-        self.dict = {"oCone": [93,192,144,255,0,22], "gCone": [0,289,31,241,45,66], "yCone": [139,360,110,227,13,42]}
-
+        self.thresholds = {'low_hue':108,'high_hue':280,'low_sat':0,'high_sat':181,'low_val':63,'high_val':105}
+        self.dict = {"oCone": [93,192,144,255,0,22], "gCone": [0,289,31,241,45,66], "yCone": [139,360,110,227,13,42], "gBall": [108,280,0,181,63,105]}
+        self.centerY = 0
+        self.centerX = 0
+        self.backY = 0
+        self.backX = 0
     def run(self):
         url = "http://"+self.IP_ADDRESS+":"+str(self.PORT)
         stream = urllib.request.urlopen(url)
@@ -201,11 +215,22 @@ class ImageProc(threading.Thread):
         hsvImage = cv2.cvtColor(self.latestImg, cv2.COLOR_BGR2HSV)   
         hsvMask = cv2.inRange(hsvImage, low, high)
         updatedImage = cv2.bitwise_and(hsvImage, hsvImage, mask=hsvMask)
-        bwImage = cv2.cvtColor(updatedImage, cv2.COLOR_HSV2GRAY)   
+        colorImage = cv2.cvtColor(updatedImage, cv2.COLOR_HSV2RGB) 
+        bwImage =  cv2.cvtColor(colorImage, cv2.COLOR_RGB2GRAY) 
+        kernel = numpy.ones((3,3), numpy.uint8)
+        erodedImage = cv2.erode(bwImage, kernel, iterations=2)
+        dilatedImage = cv2.dilate(erodedImage, kernel, iterations=2)
+        numlabels,labels,stats,centroids = cv2.connectedComponentsWithStats(dilatedImage)
+        self.centerX = int(centroids[1][0])
+        self.centerY = int(centroids[1][1])
+        self.backX = int(centroids[0][0])
+        self.backY = int(centroids[0][1])
+        circleImage = cv2.circle(dilatedImage, (self.centerX,self.centerY), int(stats[1,cv2.CC_STAT_WIDTH]/2), (255,0,255),1)
+    
         # END TODO
         # return cv2.bitwise_and(self.latestImg, self.latestImg, mask=theMask)
-        return cv2.bitwise_and(hsvImage, hsvImage, mask=hsvMask)
-
+        #return cv2.bitwise_and(hsvImage, hsvImage, mask=hsvMask)
+        return dilatedImage
 # END OF IMAGEPROC
 
 
