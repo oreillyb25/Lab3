@@ -105,31 +105,37 @@ class StateMachine(threading.Thread):
                 #spin around and look for it
                 sleep(3)
                 self.sock.sendall("a spin_right(100)".encode())
+                self.sock.recv(128).decode()
+                
                 #pass
             if self.STATE == States.RIGHT:
                 #turn right
                 sleep(0.5)
                 self.sock.sendall("a spin_right(50)".encode())
+                self.sock.recv(128).decode()
                 #pass
             if self.STATE == States.LEFT:
                 #turn left
                 sleep(0.5)
                 self.sock.sendall("a spin_left(50)".encode())
+                self.sock.recv(128).decode()
                 #pass
             if self.STATE == States.BELOW:
                 #speed up
                 self.sock.sendall("a drive_straight(90)".encode())
+                self.sock.recv(128).decode()
                 #pass
             if self.STATE == States.ABOVE:
                 #woah there tristan...slow down buddy
                 self.sock.sendall("a drive_straight(20)".encode())
+                self.sock.recv(128).decode()
                 #pass
             if self.STATE == States.CENTER:
                 #move at normal
                 self.sock.sendall("a drive_straight(50)".encode())
-                #pass
-            self.STATE == States.LISTEN
-
+                self.sock.recv(128).decode()
+                
+            self.STATE = States.LISTEN
 
         # END OF CONTROL LOOP
         
@@ -205,10 +211,11 @@ class ImageProc(threading.Thread):
         self.RUNNING = True
         self.latestImg = []
         self.feedback = []
-        self.thresholds = {'low_hue': 108, 'high_hue': 280, 'low_sat': 0, 'high_sat': 181, 'low_val': 63,
-                           'high_val': 105}
+        self.thresholds = {'low_hue': 121, 'high_hue': 360, 'low_sat': 125, 'high_sat': 255, 'low_val': 0,
+                           'high_val': 16}
         self.dict = {"oCone": [93, 192, 144, 255, 0, 22], "gCone": [0, 289, 31, 241, 45, 66],
-                     "yCone": [139, 360, 110, 227, 13, 42], "gBall": [108, 280, 0, 181, 63, 105]}
+                     "yCone": [139, 360, 110, 227, 13, 42], "gBall": [108, 280, 0, 181, 63, 105],
+                     "oBall": [121,360,125,255,0,16]}
         self.centerY = -1
         self.centerX = -1
         self.backY = 0
@@ -266,14 +273,15 @@ class ImageProc(threading.Thread):
         try:
             self.centerX = int(centroids[1][0])
             self.centerY = int(centroids[1][1])
+            circleImage = cv2.circle(dilatedImage, (self.centerX, self.centerY), int(stats[1, cv2.CC_STAT_WIDTH] / 2),
+                                 (255, 0, 255), 1)
         except:
             self.centerX = -1
             self.centerY = -1
         self.backX = int(centroids[0][0])
         self.backY = int(centroids[0][1])
 
-        circleImage = cv2.circle(dilatedImage, (self.centerX, self.centerY), int(stats[1, cv2.CC_STAT_WIDTH] / 2),
-                                 (255, 0, 255), 1)
+        
 
         # END TODO
         # return cv2.bitwise_and(self.latestImg, self.latestImg, mask=theMask)
