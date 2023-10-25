@@ -89,7 +89,17 @@ class StateMachine(threading.Thread):
                     if(video.backX - self.thresh) >= video.centerX
                 pass
             # TODO: Work here
-            if self.STATE == States.LISTEN:
+            if self.STATE == States.NO:
+                pass
+            if self.STATE == States.RIGHT:
+                pass
+            if self.STATE == States.LEFT:
+                pass
+            if self.STATE == States.BELOW:
+                pass
+            if self.STATE == States.ABOVE:
+                pass
+            if self.STATE == States.CENTER:
                 pass
 
         # END OF CONTROL LOOP
