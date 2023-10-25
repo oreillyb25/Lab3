@@ -85,9 +85,19 @@ class StateMachine(threading.Thread):
             sleep(0.1)
             video = self.video
             if self.STATE == States.LISTEN:
+
                 if (video.backY - self.thresh) <= video.centerY and (video.backY + self.thresh) >= video.centerY:
-                    if(video.backX - self.thresh) >= video.centerX
-                pass
+                    if(video.backX - self.thresh) >= video.centerX:
+                        self.STATE = States.LEFT
+                    if(video.backX + self.thresh) <= video.centerX:
+                        self.STATE = States.RIGHT
+                    else: 
+                        self.STATE = States.CENTER
+                elif (video.backY - self.thresh) >= video.centerY:
+                    self.STATE = States.BELOW
+                elif (video.backY + self.thresh) <= video.centerY:
+                    self.STATE = States.ABOVE
+                
             # TODO: Work here
             if self.STATE == States.NO:
                 pass
@@ -178,8 +188,8 @@ class ImageProc(threading.Thread):
         self.feedback = []
         self.thresholds = {'low_hue':108,'high_hue':280,'low_sat':0,'high_sat':181,'low_val':63,'high_val':105}
         self.dict = {"oCone": [93,192,144,255,0,22], "gCone": [0,289,31,241,45,66], "yCone": [139,360,110,227,13,42], "gBall": [108,280,0,181,63,105]}
-        self.centerY = 0
-        self.centerX = 0
+        self.centerY = -1
+        self.centerX = -1
         self.backY = 0
         self.backX = 0
     def run(self):
