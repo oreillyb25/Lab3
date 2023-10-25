@@ -103,12 +103,12 @@ class StateMachine(threading.Thread):
                 #spin around and look for it
                 sleep(3)
                 self.spin_right(100)
-                pass
+                #pass
             if self.STATE == States.RIGHT:
                 #turn right
                 sleep(0.5)
                 self.spin_right(50)
-                pass
+                #pass
             if self.STATE == States.LEFT:
                 #turn left
                 sleep(0.5)
@@ -117,13 +117,14 @@ class StateMachine(threading.Thread):
             if self.STATE == States.BELOW:
                 #speed up
                 self.drive_straight(90)
-                pass
+                #pass
             if self.STATE == States.ABOVE:
                 #woah there tristan...slow down buddy
                 self.drive_straight(20)
-                pass
+                #pass
             if self.STATE == States.CENTER:
                 #move at normal
+                self.drive()
                 pass
 
         # END OF CONTROL LOOP
