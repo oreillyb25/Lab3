@@ -126,7 +126,7 @@ class StateMachine(threading.Thread):
                 #pass
             if self.STATE == States.CENTER:
                 #move at normal
-                self.sock.sendall("a drive()".encode())
+                self.sock.sendall("a drive_straight(50)".encode())
                 pass
 
         # END OF CONTROL LOOP
