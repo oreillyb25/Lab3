@@ -1,8 +1,7 @@
-# python 3 code
+#python 3 code
 import socket
 from time import *
 from pynput import keyboard
-
 """pynput: On Mac OSX, one of the following must be true:
 * The process must run as root. OR
 * Your application must be white listed under Enable access for assistive devices. Note that this might require that you package your application, since otherwise the entire Python installation must be white listed."""
@@ -21,7 +20,6 @@ IP_ADDRESS = "192.168.1.106"  # SET THIS TO THE RASPBERRY PI's IP ADDRESS
 RESIZE_SCALE = 2  # try a larger value if your computer is running slow.
 ENABLE_ROBOT_CONNECTION = True
 
-
 # You should fill this in with your states
 class States(enum.Enum):
     LISTEN = enum.auto()
@@ -31,7 +29,6 @@ class States(enum.Enum):
     LEFT = enum.auto()
     RIGHT = enum.auto()
     NO = enum.auto()
-
 
 class StateMachine(threading.Thread):
 
@@ -79,7 +76,8 @@ class StateMachine(threading.Thread):
         # Collect events until released
         self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
         self.listener.start()
-
+            
+            
     def run(self):
 
         # BEGINNING OF THE CONTROL LOOP
@@ -103,17 +101,41 @@ class StateMachine(threading.Thread):
                         self.STATE = States.ABOVE
 
             # TODO: Work here
-            if self.STATE == States.LISTEN:
+            if self.STATE == States.NO:
+                #spin around and look for it
+                sleep(3)
+                self.spin_right(100)
+                pass
+            if self.STATE == States.RIGHT:
+                #turn right
+                sleep(0.5)
+                self.spin_right(50)
+                pass
+            if self.STATE == States.LEFT:
+                #turn left
+                sleep(0.5)
+                self.spin_left(50)
+                #pass
+            if self.STATE == States.BELOW:
+                #speed up
+                self.drive_straight(90)
+                pass
+            if self.STATE == States.ABOVE:
+                #woah there tristan...slow down buddy
+                self.drive_straight(20)
+                pass
+            if self.STATE == States.CENTER:
+                #move at normal
                 pass
 
         # END OF CONTROL LOOP
-
+        
         # First stop any other threads talking to the robot
         self.sensors.RUNNING = False
         self.video.RUNNING = False
-
-        sleep(1)  # Wait for threads to wrap up
-
+        
+        sleep(1)    # Wait for threads to wrap up
+        
         # Need to disconnect
         """ The c command stops the robot and disconnects.  The stop command will also reset the Create's mode to a battery safe PASSIVE.  It is very important to use this command!"""
         with socketLock:
@@ -148,7 +170,6 @@ class StateMachine(threading.Thread):
             self.sensors.RUNNING = False
             self.video.RUNNING = False
             return False
-
 
 # END OF STATEMACHINE
 
