@@ -104,29 +104,29 @@ class StateMachine(threading.Thread):
             if self.STATE == States.NO:
                 #spin around and look for it
                 sleep(3)
-                self.spin_right(100)
+                self.sock.sendall("a spin_right(100)".encode())
                 #pass
             if self.STATE == States.RIGHT:
                 #turn right
                 sleep(0.5)
-                self.spin_right(50)
+                self.sock.sendall("a spin_right(50)".encode())
                 #pass
             if self.STATE == States.LEFT:
                 #turn left
                 sleep(0.5)
-                self.spin_left(50)
+                self.sock.sendall("a spin_left(50)".encode())
                 #pass
             if self.STATE == States.BELOW:
                 #speed up
-                self.drive_straight(90)
+                self.sock.sendall("a drive_straight(90)".encode())
                 #pass
             if self.STATE == States.ABOVE:
                 #woah there tristan...slow down buddy
-                self.drive_straight(20)
+                self.sock.sendall("a drive_straight(20)".encode())
                 #pass
             if self.STATE == States.CENTER:
                 #move at normal
-                self.drive()
+                self.sock.sendall("a drive()".encode())
                 pass
 
         # END OF CONTROL LOOP
