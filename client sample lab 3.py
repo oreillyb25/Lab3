@@ -206,7 +206,8 @@ class ImageProc(threading.Thread):
         self.thresholds = {'low_hue': 108, 'high_hue': 280, 'low_sat': 0, 'high_sat': 181, 'low_val': 63,
                            'high_val': 105}
         self.dict = {"oCone": [93, 192, 144, 255, 0, 22], "gCone": [0, 289, 31, 241, 45, 66],
-                     "yCone": [139, 360, 110, 227, 13, 42], "gBall": [108, 280, 0, 181, 63, 105]}
+                     "yCone": [139, 360, 110, 227, 13, 42], "gBall": [108, 280, 0, 181, 63, 105],
+                     "oBall": [121,360,125,255,0,16]}
         self.centerY = -1
         self.centerX = -1
         self.backY = 0
