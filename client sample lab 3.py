@@ -100,16 +100,22 @@ class StateMachine(threading.Thread):
                 
             # TODO: Work here
             if self.STATE == States.NO:
+                #spin around and look for it
                 pass
             if self.STATE == States.RIGHT:
+                #turn right
                 pass
             if self.STATE == States.LEFT:
+                #turn left
                 pass
             if self.STATE == States.BELOW:
+                #speed up
                 pass
             if self.STATE == States.ABOVE:
+                #woah there tristan...slow down buddy
                 pass
             if self.STATE == States.CENTER:
+                #move at normal
                 pass
 
         # END OF CONTROL LOOP
