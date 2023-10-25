@@ -101,18 +101,26 @@ class StateMachine(threading.Thread):
             # TODO: Work here
             if self.STATE == States.NO:
                 #spin around and look for it
+                sleep(3)
+                self.spin_right(100)
                 pass
             if self.STATE == States.RIGHT:
                 #turn right
+                sleep(0.5)
+                self.spin_right(50)
                 pass
             if self.STATE == States.LEFT:
                 #turn left
-                pass
+                sleep(0.5)
+                self.spin_left(50)
+                #pass
             if self.STATE == States.BELOW:
                 #speed up
+                self.drive_straight(90)
                 pass
             if self.STATE == States.ABOVE:
                 #woah there tristan...slow down buddy
+                self.drive_straight(20)
                 pass
             if self.STATE == States.CENTER:
                 #move at normal
@@ -289,7 +297,7 @@ if __name__ == "__main__":
 
     while len(sm.video.latestImg) == 0 or len(sm.video.feedback) == 0:
         sleep(1)
-
+    #make sure to comment back out
     while(sm.RUNNING):
         with imageLock:
             cv2.imshow("Create View",sm.video.latestImg)
