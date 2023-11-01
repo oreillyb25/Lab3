@@ -134,6 +134,10 @@ class StateMachine(threading.Thread):
                 #move at normal
                 self.sock.sendall("a drive_straight(50)".encode())
                 self.sock.recv(128).decode()
+            
+            # Check for condition to start figure-eight
+            #if condition_to_start_figure_eight:
+                self.perform_figure_eight()
                 
             self.STATE = States.LISTEN
 
@@ -179,6 +183,48 @@ class StateMachine(threading.Thread):
             self.sensors.RUNNING = False
             self.video.RUNNING = False
             return False
+        
+#Code to drive a figure 8 around 2 cones.
+    def perform_navigation_around_green_cone(self):
+
+        # clockwise rotation around the yellow cone
+        self.sock.sendall("a rotate_clockwise(90)".encode())
+        self.sock.recv(128).decode()
+        
+        # Check if the robot has successfully navigated around the yellow cone
+        if self.detect_yellow_cone():
+            # Continue navigating until the robot is in a good position to start the figure-8
+            self.sock.sendall("a drive_straight(50)".encode())
+            self.sock.recv(128).decode()
+            sleep(1)  # Adjust delay based on your robot's speed and environment
+
+            # Transition to figure-8 state
+            self.STATE = States.FIGURE_EIGHT
+        else:
+            # If the yellow cone is not detected, continue navigation
+            self.STATE = States.CONE_DETECTED
+
+    def perform_figure_eight(self):
+        #for _ in range(2):
+       #simple figure-8 pattern
+        self.sock.sendall("a drive_straight(50)".encode())
+        self.sock.recv(128).decode()
+        sleep(1)  # Adjust delay based on your robot's speed and environment
+
+        self.sock.sendall("a rotate_clockwise(180)".encode())
+        self.sock.recv(128).decode()
+        sleep(1)  # Adjust delay based on your robot's speed and environment
+
+        self.sock.sendall("a drive_straight(50)".encode())
+        self.sock.recv(128).decode()
+        sleep(1)  # Adjust delay based on your robot's speed and environment
+
+        self.sock.sendall("a rotate_clockwise(180)".encode())
+        self.sock.recv(128).decode()
+        sleep(1)  # Adjust delay based on your robot's speed and environment
+
+        # Transition back to the LISTEN state
+        self.STATE = States.LISTEN
 
 # END OF STATEMACHINE
 
