@@ -28,6 +28,8 @@ class States(enum.Enum):
     BELOW = enum.auto()
     LEFT = enum.auto()
     RIGHT = enum.auto()
+    ABOVE_RIGHT = enum.auto()
+    ABOVE_LEFT = enum.auto()
     NO = enum.auto()
 
 class StateMachine(threading.Thread):
@@ -45,7 +47,13 @@ class StateMachine(threading.Thread):
         self.video = ImageProc()
         # Start video
         self.video.start()
-        self.thresh = 50
+
+        self.threshX = self.video.backX * 2 / 3
+        self.threshY = self.video.backY * 2 / 3
+
+        # false is left
+        self.direction = True
+        self.numCones = 0
 
         # connect to the motorcontroller
         try:
@@ -64,7 +72,7 @@ class StateMachine(threading.Thread):
                 self.sock.sendall("i /dev/ttyUSB0".encode())
                 print("Sent command")
                 result = self.sock.recv(128)
-                print(result)
+                #print(result)
                 if result.decode() != "i /dev/ttyUSB0":
                     self.RUNNING = False
 
@@ -88,53 +96,76 @@ class StateMachine(threading.Thread):
                 if (video.centerY == -1 or video.centerX == -1):
                     self.STATE = States.NO
                 else:
-                    if (video.backY - self.thresh) <= video.centerY and (video.backY + self.thresh) >= video.centerY:
-                        if (video.backX - self.thresh) >= video.centerX:
+                    if (self.threshY * 2) <= video.centerY and (self.threshY) >= video.centerY:
+                        if self.threshX >= video.centerX:
                             self.STATE = States.LEFT
-                        if (video.backX + self.thresh) <= video.centerX:
+                        if (self.threshX * 2) <= video.centerX:
                             self.STATE = States.RIGHT
                         else:
                             self.STATE = States.CENTER
-                    elif (video.backY - self.thresh) >= video.centerY:
+                    elif self.threshY >= video.centerY:
                         self.STATE = States.BELOW
-                    elif (video.backY + self.thresh) <= video.centerY:
-                        self.STATE = States.ABOVE
+                    elif (self.threshY * 2) <= video.centerY:
+                        if self.threshX >= video.centerX:
+                            self.STATE = States.ABOVE_LEFT
+                        if (self.threshX * 2) <= video.centerX:
+                            self.STATE = States.ABOVE_RIGHT
+                        else:
+                            self.STATE = States.ABOVE
 
             # TODO: Work here
+            print(self.STATE)
             if self.STATE == States.NO:
                 #spin around and look for it
-                sleep(3)
-                self.sock.sendall("a spin_right(100)".encode())
+                self.sock.sendall("a spin_right(50)".encode())
                 self.sock.recv(128).decode()
                 
                 #pass
             if self.STATE == States.RIGHT:
-                #turn right
-                sleep(0.5)
-                self.sock.sendall("a spin_right(50)".encode())
-                self.sock.recv(128).decode()
-                #pass
+                if self.direction:
+                    self.sock.sendall("a drive_straight(90)".encode())
+                    self.sock.recv(128).decode()
+                else:
+                    self.sock.sendall("a spin_right(50)".encode())
+                    self.sock.recv(128).decode()
             if self.STATE == States.LEFT:
-                #turn left
-                sleep(0.5)
-                self.sock.sendall("a spin_left(50)".encode())
-                self.sock.recv(128).decode()
-                #pass
+                if not self.direction:
+                    self.sock.sendall("a drive_straight(90)".encode())
+                    self.sock.recv(128).decode()
+                else:
+                    self.sock.sendall("a spin_left(50)".encode())
+                    self.sock.recv(128).decode()
+
             if self.STATE == States.BELOW:
-                #speed up
+                # forward
                 self.sock.sendall("a drive_straight(90)".encode())
                 self.sock.recv(128).decode()
-                #pass
+
             if self.STATE == States.ABOVE:
-                #woah there tristan...slow down buddy
-                self.sock.sendall("a drive_straight(20)".encode())
+                # back up
+                self.sock.sendall("a drive_direct(-90, -90)".encode())
                 self.sock.recv(128).decode()
-                #pass
+
+
             if self.STATE == States.CENTER:
-                #move at normal
-                self.sock.sendall("a drive_straight(50)".encode())
+                if self.direction:
+                    self.sock.sendall("a spin_left(50)".encode())
+                    self.sock.recv(128).decode()
+                else:
+                    self.sock.sendall("a spin_right(50)".encode())
+                    self.sock.recv(128).decode()
+            if self.STATE == States.ABOVE_RIGHT:
+                self.sock.sendall("a drive_direct(80,50)".encode())
                 self.sock.recv(128).decode()
-                
+                sleep(3)
+                self.direction = not self.direction
+
+            if self.STATE == States.ABOVE_LEFT:
+                self.sock.sendall("a drive_direct(50,80)".encode())
+                self.sock.recv(128).decode()
+                sleep(3)
+                self.direction = not self.direction
+
             self.STATE = States.LISTEN
 
         # END OF CONTROL LOOP
@@ -211,8 +242,8 @@ class ImageProc(threading.Thread):
         self.RUNNING = True
         self.latestImg = []
         self.feedback = []
-        self.thresholds = {'low_hue': 121, 'high_hue': 360, 'low_sat': 125, 'high_sat': 255, 'low_val': 0,
-                           'high_val': 16}
+        self.thresholds = {'low_hue': 0, 'high_hue': 289, 'low_sat': 31, 'high_sat': 241, 'low_val': 45,
+                           'high_val': 66}
         self.dict = {"oCone": [93, 192, 144, 255, 0, 22], "gCone": [0, 289, 31, 241, 45, 66],
                      "yCone": [139, 360, 110, 227, 13, 42], "gBall": [108, 280, 0, 181, 63, 105],
                      "oBall": [121,360,125,255,0,16]}
@@ -267,7 +298,7 @@ class ImageProc(threading.Thread):
         colorImage = cv2.cvtColor(updatedImage, cv2.COLOR_HSV2RGB)
         bwImage = cv2.cvtColor(colorImage, cv2.COLOR_RGB2GRAY)
         kernel = numpy.ones((3, 3), numpy.uint8)
-        erodedImage = cv2.erode(bwImage, kernel, iterations=2)
+        erodedImage = cv2.erode(bwImage, kernel, iterations=4)
         dilatedImage = cv2.dilate(erodedImage, kernel, iterations=2)
         numlabels, labels, stats, centroids = cv2.connectedComponentsWithStats(dilatedImage)
         try:
