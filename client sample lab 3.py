@@ -29,6 +29,9 @@ class States(enum.Enum):
     LEFT = enum.auto()
     RIGHT = enum.auto()
     NO = enum.auto()
+    LEFT_TURN = enum.auto()
+    TOP_TURN = enum.auto()
+    DR = enum.auto()
 
 class StateMachine(threading.Thread):
 
@@ -84,62 +87,94 @@ class StateMachine(threading.Thread):
         while (self.RUNNING):
             sleep(0.1)
             video = self.video
-            if self.STATE == States.LISTEN:
+            if self.STATE == States.Listen:
                 if (video.centerY == -1 or video.centerX == -1):
-                    self.STATE = States.NO
+                    self.STATE = States.N0
                 else:
-                    if (video.backY - self.thresh) <= video.centerY and (video.backY + self.thresh) >= video.centerY:
-                        if (video.backX - self.thresh) >= video.centerX:
-                            self.STATE = States.LEFT
-                        if (video.backX + self.thresh) <= video.centerX:
-                            self.STATE = States.RIGHT
-                        else:
-                            self.STATE = States.CENTER
-                    elif (video.backY - self.thresh) >= video.centerY:
-                        self.STATE = States.BELOW
-                    elif (video.backY + self.thresh) <= video.centerY:
-                        self.STATE = States.ABOVE
+                    counter = 0
+                    sleep(1)
+                    elf.sock.sendall("a drive_straight(50)".encode())
+                    self.sock.recv(128).decode()
+                    self.STATE = States.LEFT_TURN()
+                    # self.sock.sendall("a drive_straight(50)".encode())
+                    # self.sock.recv(128).decode()
+                    # sleep(1)  # Adjust delay based on your robot's speed and environment
+                    if (self.STATE == States.LEFT_TURN()):
+                        sleep(1)
+                        self.sock.sendall("a spin_left(180)".encode())
+                        self.sock.recv(128).decode()
+                        # sleep(1)  # Adjust delay based on your robot's speed and environment
+                        self.STATE = States.DR()
+                        counter = counter + 1
+                        if (counter >= 2):
+                            self.STATE = States.LISTEN()
+                    elif (self.STATE == States.DR()):
+                        sleep(2)
+                        self.sock.sendall("a drive_straight(75)".encode())
+                        self.sock.recv(128).decode()
+                        self.STATE = States.TOP_TURN()
 
-            # TODO: Work here
+                    elif (self.STATE == States.TOP_TURN()):
+                        sleep(2)
+                        self.sock.sendall("a spin_right(100)".encode())
+                        self.sock.recv(128).decode()
+                        self.STATE == States.LEFT_TURN()
+            # if self.STATE == States.LISTEN:
+            #     if (video.centerY == -1 or video.centerX == -1):
+            #         self.STATE = States.NO
+            #     else:
+            #         if (video.backY - self.thresh) <= video.centerY and (video.backY + self.thresh) >= video.centerY:
+            #             if (video.backX - self.thresh) >= video.centerX:
+            #                 self.STATE = States.LEFT
+            #             if (video.backX + self.thresh) <= video.centerX:
+            #                 self.STATE = States.RIGHT
+            #             else:
+            #                 self.STATE = States.CENTER
+            #         elif (video.backY - self.thresh) >= video.centerY:
+            #             self.STATE = States.BELOW
+            #         elif (video.backY + self.thresh) <= video.centerY:
+            #             self.STATE = States.ABOVE
+            #
+            # # TODO: Work here
             if self.STATE == States.NO:
-                #spin around and look for it
-                sleep(3)
-                self.sock.sendall("a spin_right(100)".encode())
-                self.sock.recv(128).decode()
-                
-                #pass
-            if self.STATE == States.RIGHT:
-                #turn right
-                sleep(0.5)
-                self.sock.sendall("a spin_right(50)".encode())
-                self.sock.recv(128).decode()
-                #pass
-            if self.STATE == States.LEFT:
-                #turn left
-                sleep(0.5)
-                self.sock.sendall("a spin_left(50)".encode())
-                self.sock.recv(128).decode()
-                #pass
-            if self.STATE == States.BELOW:
-                #speed up
-                self.sock.sendall("a drive_straight(90)".encode())
-                self.sock.recv(128).decode()
-                #pass
-            if self.STATE == States.ABOVE:
-                #woah there tristan...slow down buddy
-                self.sock.sendall("a drive_straight(20)".encode())
-                self.sock.recv(128).decode()
-                #pass
-            if self.STATE == States.CENTER:
-                #move at normal
-                self.sock.sendall("a drive_straight(50)".encode())
-                self.sock.recv(128).decode()
-            
-            # Check for condition to start figure-eight
-            #if condition_to_start_figure_eight:
-                self.perform_figure_eight()
-                
-            self.STATE = States.LISTEN
+            #     #spin around and look for it
+                 sleep(3)
+                 self.sock.sendall("a spin_right(100)".encode())
+                 self.sock.recv(128).decode()
+            #
+            #     #pass
+            # if self.STATE == States.RIGHT:
+            #     #turn right
+            #     sleep(0.5)
+            #     self.sock.sendall("a spin_right(50)".encode())
+            #     self.sock.recv(128).decode()
+            #     #pass
+            # if self.STATE == States.LEFT:
+            #     #turn left
+            #     sleep(0.5)
+            #     self.sock.sendall("a spin_left(50)".encode())
+            #     self.sock.recv(128).decode()
+            #     #pass
+            # if self.STATE == States.BELOW:
+            #     #speed up
+            #     self.sock.sendall("a drive_straight(90)".encode())
+            #     self.sock.recv(128).decode()
+            #     #pass
+            # if self.STATE == States.ABOVE:
+            #     #woah there tristan...slow down buddy
+            #     self.sock.sendall("a drive_straight(20)".encode())
+            #     self.sock.recv(128).decode()
+            #     #pass
+            # if self.STATE == States.CENTER:
+            #     #move at normal
+            #     self.sock.sendall("a drive_straight(50)".encode())
+            #     self.sock.recv(128).decode()
+            #
+            # # Check for condition to start figure-eight
+            # #if condition_to_start_figure_eight:
+            #     self.perform_figure_eight()
+            #
+            # self.STATE = States.LISTEN
 
         # END OF CONTROL LOOP
         
@@ -184,47 +219,7 @@ class StateMachine(threading.Thread):
             self.video.RUNNING = False
             return False
         
-#Code to drive a figure 8 around 2 cones.
-    def perform_navigation_around_green_cone(self):
 
-        # clockwise rotation around the yellow cone
-        self.sock.sendall("a rotate_clockwise(90)".encode())
-        self.sock.recv(128).decode()
-        
-        # Check if the robot has successfully navigated around the yellow cone
-        if self.detect_yellow_cone():
-            # Continue navigating until the robot is in a good position to start the figure-8
-            self.sock.sendall("a drive_straight(50)".encode())
-            self.sock.recv(128).decode()
-            sleep(1)  # Adjust delay based on your robot's speed and environment
-
-            # Transition to figure-8 state
-            self.STATE = States.FIGURE_EIGHT
-        else:
-            # If the yellow cone is not detected, continue navigation
-            self.STATE = States.CONE_DETECTED
-
-    def perform_figure_eight(self):
-        #for _ in range(2):
-       #simple figure-8 pattern
-        self.sock.sendall("a drive_straight(50)".encode())
-        self.sock.recv(128).decode()
-        sleep(1)  # Adjust delay based on your robot's speed and environment
-
-        self.sock.sendall("a rotate_clockwise(180)".encode())
-        self.sock.recv(128).decode()
-        sleep(1)  # Adjust delay based on your robot's speed and environment
-
-        self.sock.sendall("a drive_straight(50)".encode())
-        self.sock.recv(128).decode()
-        sleep(1)  # Adjust delay based on your robot's speed and environment
-
-        self.sock.sendall("a rotate_clockwise(180)".encode())
-        self.sock.recv(128).decode()
-        sleep(1)  # Adjust delay based on your robot's speed and environment
-
-        # Transition back to the LISTEN state
-        self.STATE = States.LISTEN
 
 # END OF STATEMACHINE
 
