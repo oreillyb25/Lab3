@@ -28,8 +28,8 @@ class States(enum.Enum):
     BELOW = enum.auto()
     LEFT = enum.auto()
     RIGHT = enum.auto()
-    ABOVE_RIGHT = enum.auto()
-    ABOVE_LEFT = enum.auto()
+    BELOW_RIGHT = enum.auto()
+    BELOW_LEFT = enum.auto()
     NO = enum.auto()
 
 class StateMachine(threading.Thread):
@@ -48,8 +48,12 @@ class StateMachine(threading.Thread):
         # Start video
         self.video.start()
 
-        self.threshX = self.video.backX * 2 / 3
-        self.threshY = self.video.backY * 2 / 3
+        self.threshX = 100
+        self.threshY = 76.67
+        #backX = 150
+        #backY = 110
+
+        #size of frame 300x230
 
         # false is left
         self.direction = True
@@ -96,22 +100,22 @@ class StateMachine(threading.Thread):
                 if (video.centerY == -1 or video.centerX == -1):
                     self.STATE = States.NO
                 else:
-                    if (self.threshY * 2) <= video.centerY and (self.threshY) >= video.centerY:
-                        if self.threshX >= video.centerX:
+                    if (self.threshY) <= video.centerY and (self.threshY *2) >= video.centerY:
+                        if (self.threshX) >= video.centerX:
                             self.STATE = States.LEFT
-                        if (self.threshX * 2) <= video.centerX:
+                        elif (self.threshX*2) <= video.centerX:
                             self.STATE = States.RIGHT
                         else:
                             self.STATE = States.CENTER
-                    elif self.threshY >= video.centerY:
-                        self.STATE = States.BELOW
-                    elif (self.threshY * 2) <= video.centerY:
-                        if self.threshX >= video.centerX:
-                            self.STATE = States.ABOVE_LEFT
-                        if (self.threshX * 2) <= video.centerX:
-                            self.STATE = States.ABOVE_RIGHT
+                    elif (self.threshY) <= video.centerY:
+                        if (self.threshX) >= video.centerX:
+                            self.STATE = States.BELOW_LEFT
+                        elif (self.threshX*2) <= video.centerX:
+                            self.STATE = States.BELOW_RIGHT
                         else:
-                            self.STATE = States.ABOVE
+                            self.STATE = States.BELOW
+                    elif (self.threshY *2) >= video.centerY:
+                        self.STATE = States.ABOVE
 
             # TODO: Work here
             print(self.STATE)
@@ -126,49 +130,49 @@ class StateMachine(threading.Thread):
                     self.sock.sendall("a drive_straight(90)".encode())
                     self.sock.recv(128).decode()
                 else:
-                    self.sock.sendall("a spin_right(50)".encode())
+                    self.sock.sendall("a spin_right(25)".encode())
                     self.sock.recv(128).decode()
             if self.STATE == States.LEFT:
                 if not self.direction:
                     self.sock.sendall("a drive_straight(90)".encode())
                     self.sock.recv(128).decode()
                 else:
-                    self.sock.sendall("a spin_left(50)".encode())
+                    self.sock.sendall("a spin_left(25)".encode())
                     self.sock.recv(128).decode()
 
             if self.STATE == States.BELOW:
-                # forward
-                self.sock.sendall("a drive_straight(90)".encode())
+               # back up
+                self.sock.sendall("a drive_direct(-90, -90)".encode())
                 self.sock.recv(128).decode()
 
             if self.STATE == States.ABOVE:
-                # back up
-                self.sock.sendall("a drive_direct(-90, -90)".encode())
+                 # forward
+                self.sock.sendall("a drive_straight(90)".encode())
                 self.sock.recv(128).decode()
 
 
             if self.STATE == States.CENTER:
                 if self.direction:
-                    self.sock.sendall("a spin_left(50)".encode())
+                    self.sock.sendall("a spin_left(25)".encode())
                     self.sock.recv(128).decode()
                 else:
-                    self.sock.sendall("a spin_right(50)".encode())
+                    self.sock.sendall("a spin_right(25)".encode())
                     self.sock.recv(128).decode()
-            if self.STATE == States.ABOVE_RIGHT:
-                self.sock.sendall("a drive_direct(20,100)".encode())
-                self.sock.recv(128).decode()
-                sleep(3)
-                
-                with socketLock:
-                    self.direction = not self.direction
-
-            if self.STATE == States.ABOVE_LEFT:
+            if self.STATE == States.BELOW_RIGHT:
                 self.sock.sendall("a drive_direct(100,20)".encode())
                 self.sock.recv(128).decode()
                 sleep(3)
                 
-                with socketLock:
-                    self.direction = not self.direction
+                # with socketLock:
+                #     self.direction = not self.direction
+
+            if self.STATE == States.BELOW_LEFT:
+                self.sock.sendall("a drive_direct(20,100)".encode())
+                self.sock.recv(128).decode()
+                sleep(3)
+                
+                # with socketLock:
+                #     self.direction = not self.direction
                 
 
             self.STATE = States.LISTEN
@@ -247,9 +251,9 @@ class ImageProc(threading.Thread):
         self.RUNNING = True
         self.latestImg = []
         self.feedback = []
-        self.thresholds = {'low_hue': 0, 'high_hue': 289, 'low_sat': 31, 'high_sat': 241, 'low_val': 45,
-                           'high_val': 66}
-        self.dict = {"oCone": [93, 192, 144, 255, 0, 22], "gCone": [0, 289, 31, 241, 45, 66],
+        self.thresholds = {'low_hue': 166, 'high_hue': 230, 'low_sat': 144, 'high_sat': 255, 'low_val': 0,
+                           'high_val': 22}
+        self.dict = {"oCone": [166, 230, 144, 255, 0, 22], "gCone": [0, 289, 31, 241, 45, 66],
                      "yCone": [139, 360, 110, 227, 13, 42], "gBall": [108, 280, 0, 181, 63, 105],
                      "oBall": [121,360,125,255,0,16]}
         self.centerY = -1
@@ -303,12 +307,13 @@ class ImageProc(threading.Thread):
         colorImage = cv2.cvtColor(updatedImage, cv2.COLOR_HSV2RGB)
         bwImage = cv2.cvtColor(colorImage, cv2.COLOR_RGB2GRAY)
         kernel = numpy.ones((3, 3), numpy.uint8)
-        erodedImage = cv2.erode(bwImage, kernel, iterations=4)
-        dilatedImage = cv2.dilate(erodedImage, kernel, iterations=2)
+        erodedImage = cv2.erode(bwImage, kernel, iterations=1)
+        dilatedImage = cv2.dilate(erodedImage, kernel, iterations=1)
         numlabels, labels, stats, centroids = cv2.connectedComponentsWithStats(dilatedImage)
         try:
             self.centerX = int(centroids[1][0])
             self.centerY = int(centroids[1][1])
+
             circleImage = cv2.circle(dilatedImage, (self.centerX, self.centerY), int(stats[1, cv2.CC_STAT_WIDTH] / 2),
                                  (255, 0, 255), 1)
         except:
@@ -317,7 +322,10 @@ class ImageProc(threading.Thread):
         self.backX = int(centroids[0][0])
         self.backY = int(centroids[0][1])
 
-        
+        #test with width and height
+        # self.backX = stats[0, cv2.CC_STAT_WIDTH]
+        # self.backY = stats[0, cv2.CC_STAT_HEIGHT]
+       
 
         # END TODO
         # return cv2.bitwise_and(self.latestImg, self.latestImg, mask=theMask)
