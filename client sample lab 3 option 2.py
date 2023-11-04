@@ -126,54 +126,67 @@ class StateMachine(threading.Thread):
                 
                 #pass
             if self.STATE == States.RIGHT:
-                if self.direction:
-                    self.sock.sendall("a drive_straight(90)".encode())
-                    self.sock.recv(128).decode()
-                else:
-                    self.sock.sendall("a spin_right(25)".encode())
-                    self.sock.recv(128).decode()
+                self.sock.sendall("a spin_right(25)".encode())
+                self.sock.recv(128).decode()
             if self.STATE == States.LEFT:
-                if not self.direction:
-                    self.sock.sendall("a drive_straight(90)".encode())
-                    self.sock.recv(128).decode()
-                else:
-                    self.sock.sendall("a spin_left(25)".encode())
-                    self.sock.recv(128).decode()
+                self.sock.sendall("a spin_left(25)".encode())
+                self.sock.recv(128).decode()
 
             if self.STATE == States.BELOW:
-               # back up
-                self.sock.sendall("a drive_direct(-90, -90)".encode())
-                self.sock.recv(128).decode()
+               # go left around it (cone is to right)
+               if (self.direction) :
+                    self.sock.sendall("a drive_straight(50)".encode())
+                    self.sock.recv(128).decode()
+                    sleep(1)
+                    self.sock.sendall("a drive_direct(100,-100)".encode())
+                    self.sock.recv(128).decode()
+                    sleep(1.6)
+                    self.sock.sendall("a drive_direct(10,50)".encode())
+                    self.sock.recv(128).decode()
+                    sleep(6)
+                    self.sock.sendall("a drive_direct(-100,100)".encode())
+                    self.sock.recv(128).decode()
+                    sleep(1.6)
+                    self.direction = not self.direction
+               else:
+                   self.sock.sendall("a drive_straight(50)".encode())
+                   self.sock.recv(128).decode()
+                   sleep(1)
+                   self.sock.sendall("a spin_right(100)".encode())
+                   self.sock.recv(128).decode()
+                   sleep(1.6)
+                   self.sock.sendall("a drive_direct(50,10)".encode())
+                   self.sock.recv(128).decode()
+                   sleep(6)
+                   self.sock.sendall("a spin_left(100)".encode())
+                   self.sock.recv(128).decode()
+                   sleep(1.6)
+                   self.direction = not self.direction
+
 
             if self.STATE == States.ABOVE:
                  # forward
-                self.sock.sendall("a drive_straight(90)".encode())
+                self.sock.sendall("a drive_straight(50)".encode())
                 self.sock.recv(128).decode()
 
 
             if self.STATE == States.CENTER:
-                if self.direction:
-                    self.sock.sendall("a spin_left(25)".encode())
-                    self.sock.recv(128).decode()
-                else:
-                    self.sock.sendall("a spin_right(25)".encode())
-                    self.sock.recv(128).decode()
-            if self.STATE == States.BELOW_RIGHT:
-                self.sock.sendall("a drive_direct(100,20)".encode())
+                self.sock.sendall("a drive_straight(50)".encode())
                 self.sock.recv(128).decode()
-                sleep(3)
-                
+            if self.STATE == States.BELOW_RIGHT:
+                self.sock.sendall("a spin_right(15)".encode())
+                self.sock.recv(128).decode()
+
                 # with socketLock:
                 #     self.direction = not self.direction
 
             if self.STATE == States.BELOW_LEFT:
-                self.sock.sendall("a drive_direct(20,100)".encode())
+                self.sock.sendall("a spin_left(15)".encode())
                 self.sock.recv(128).decode()
-                sleep(3)
-                
+
                 # with socketLock:
                 #     self.direction = not self.direction
-                
+
 
             self.STATE = States.LISTEN
 
@@ -325,7 +338,7 @@ class ImageProc(threading.Thread):
         #test with width and height
         # self.backX = stats[0, cv2.CC_STAT_WIDTH]
         # self.backY = stats[0, cv2.CC_STAT_HEIGHT]
-       
+
 
         # END TODO
         # return cv2.bitwise_and(self.latestImg, self.latestImg, mask=theMask)
