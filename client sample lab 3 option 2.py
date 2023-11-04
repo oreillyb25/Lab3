@@ -121,8 +121,12 @@ class StateMachine(threading.Thread):
             print(self.STATE)
             if self.STATE == States.NO:
                 #spin around and look for it
-                self.sock.sendall("a spin_right(50)".encode())
-                self.sock.recv(128).decode()
+                if self.direction:
+                    self.sock.sendall("a spin_left(20)".encode())
+                    self.sock.recv(128).decode()
+                else:
+                    self.sock.sendall("a spin_right(20)".encode())
+                    self.sock.recv(128).decode()
                 
                 #pass
             if self.STATE == States.RIGHT:
@@ -137,30 +141,30 @@ class StateMachine(threading.Thread):
                if (self.direction) :
                     self.sock.sendall("a drive_straight(50)".encode())
                     self.sock.recv(128).decode()
-                    sleep(1)
+                    sleep(3.5)
                     self.sock.sendall("a drive_direct(100,-100)".encode())
                     self.sock.recv(128).decode()
-                    sleep(1.6)
-                    self.sock.sendall("a drive_direct(10,50)".encode())
+                    sleep(1.5)
+                    self.sock.sendall("a drive_direct(50,100)".encode())
                     self.sock.recv(128).decode()
-                    sleep(6)
-                    self.sock.sendall("a drive_direct(-100,100)".encode())
-                    self.sock.recv(128).decode()
-                    sleep(1.6)
+                    sleep(8)
+                    # self.sock.sendall("a drive_direct(100,-100)".encode())
+                    # self.sock.recv(128).decode()
+                    # sleep(.5)
                     self.direction = not self.direction
                else:
                    self.sock.sendall("a drive_straight(50)".encode())
                    self.sock.recv(128).decode()
-                   sleep(1)
-                   self.sock.sendall("a spin_right(100)".encode())
+                   sleep(3.5)
+                   self.sock.sendall("a drive_direct(-100,100)".encode())
                    self.sock.recv(128).decode()
-                   sleep(1.6)
-                   self.sock.sendall("a drive_direct(50,10)".encode())
+                   sleep(1.5)
+                   self.sock.sendall("a drive_direct(100,50)".encode())
                    self.sock.recv(128).decode()
-                   sleep(6)
-                   self.sock.sendall("a spin_left(100)".encode())
-                   self.sock.recv(128).decode()
-                   sleep(1.6)
+                   sleep(8)
+                   # self.sock.sendall("a drive_direct(-100,100)".encode())
+                   # self.sock.recv(128).decode()
+                   # sleep(.5)
                    self.direction = not self.direction
 
 
