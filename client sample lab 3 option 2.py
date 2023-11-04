@@ -155,16 +155,21 @@ class StateMachine(threading.Thread):
                     self.sock.sendall("a spin_right(50)".encode())
                     self.sock.recv(128).decode()
             if self.STATE == States.ABOVE_RIGHT:
-                self.sock.sendall("a drive_direct(80,50)".encode())
+                self.sock.sendall("a drive_direct(20,100)".encode())
                 self.sock.recv(128).decode()
                 sleep(3)
-                self.direction = not self.direction
+                
+                with socketLock:
+                    self.direction = not self.direction
 
             if self.STATE == States.ABOVE_LEFT:
-                self.sock.sendall("a drive_direct(50,80)".encode())
+                self.sock.sendall("a drive_direct(100,20)".encode())
                 self.sock.recv(128).decode()
                 sleep(3)
-                self.direction = not self.direction
+                
+                with socketLock:
+                    self.direction = not self.direction
+                
 
             self.STATE = States.LISTEN
 
